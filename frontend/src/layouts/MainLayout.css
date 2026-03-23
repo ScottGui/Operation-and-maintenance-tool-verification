@@ -1,0 +1,89 @@
+/**
+ * 主布局样式
+ */
+.main-layout {
+  min-height: 100vh;
+}
+
+.main-sider {
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
+  z-index: 10;
+}
+
+.logo {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.logo img {
+  width: 32px;
+  height: 32px;
+}
+
+.logo span {
+  margin-left: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1890ff;
+  white-space: nowrap;
+}
+
+.main-menu {
+  border-right: none;
+  padding-top: 8px;
+}
+
+.main-header {
+  background: #fff;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 9;
+}
+
+.collapse-btn {
+  font-size: 16px;
+  width: 40px;
+  height: 40px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+
+.user-info:hover {
+  background: #f5f5f5;
+}
+
+.username {
+  margin-left: 8px;
+  font-size: 14px;
+  color: #333;
+}
+
+.main-content {
+  margin: 24px;
+  padding: 24px;
+  background: #fff;
+  border-radius: 8px;
+  min-height: 280px;
+  overflow: auto;
+}

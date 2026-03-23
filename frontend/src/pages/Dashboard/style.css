@@ -1,0 +1,51 @@
+/**
+ * 仪表盘页面样式
+ */
+.dashboard {
+  padding-bottom: 24px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: #333;
+}
+
+.stats-row {
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  border-radius: 8px;
+}
+
+.stat-card :global(.ant-statistic-title) {
+  font-size: 14px;
+  color: #666;
+}
+
+.stat-card :global(.ant-statistic-content) {
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.stat-detail {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  gap: 24px;
+  font-size: 13px;
+  color: #666;
+}
+
+.stat-detail span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.recent-orders-card {
+  border-radius: 8px;
+}
