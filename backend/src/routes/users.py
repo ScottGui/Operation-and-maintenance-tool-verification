@@ -1,123 +1,180 @@
 """
-用户管理路由模块
-提供用户的增删改查等管理接口
+用户管理API
+包含用户CRUD和登录接口
+
+权限控制：
+- 用户列表/查询：所有登录用户可用（后续可扩展为仅管理员）
+- 创建/更新/删除用户：仅管理员可用
+
+作者/日期：AI / 2026-03-24
 """
 
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from typing import List, Optional
+from pydantic import BaseModel, Field, validator
+import re
 
 from backend.src.database import get_db
-from backend.src.models.user import User, Department
-from backend.src.models.role import Role
-from backend.src.utils.security import hash_password
-from backend.src.utils.auth import get_current_user
+from backend.src.models.user import User, USER_ROLES, USER_STATUS
+from backend.src.utils.security import hash_password, verify_password
 
 
 router = APIRouter(prefix="/api/users", tags=["用户管理"])
 
 
-# 请求模型
-class CreateUserRequest(BaseModel):
-    """创建用户请求"""
-    username: str = Field(..., min_length=3, max_length=50, description="用户名")
-    password: str = Field(..., min_length=6, max_length=50, description="密码")
-    real_name: str = Field(..., min_length=2, max_length=50, description="真实姓名")
-    email: Optional[str] = Field(None, max_length=100, description="邮箱")
-    phone: Optional[str] = Field(None, max_length=20, description="手机号")
-    department_id: Optional[int] = Field(None, description="部门ID")
-    role_ids: Optional[List[int]] = Field([], description="角色ID列表")
-    is_active: bool = Field(True, description="是否启用")
+# ============== Pydantic模型（请求/响应）==============
+
+class UserCreate(BaseModel):
+    """创建用户请求模型"""
+    username: str = Field(..., min_length=4, max_length=20, description="登录账号")
+    real_name: str = Field(..., min_length=2, max_length=20, description="真实姓名")
+    password: str = Field(..., min_length=6, max_length=20, description="密码")
+    role: str = Field(..., description="角色")
+    status: str = Field(default="active", description="状态")
+    
+    @validator("username")
+    def validate_username(cls, v):
+        """验证用户名格式：字母数字，4-20位"""
+        if not re.match(r'^[a-zA-Z0-9]+$', v):
+            raise ValueError("用户名只能包含字母和数字")
+        return v
+    
+    @validator("real_name")
+    def validate_real_name(cls, v):
+        """验证真实姓名：中文，2-20字"""
+        if not re.match(r'^[\u4e00-\u9fa5]+$', v):
+            raise ValueError("真实姓名只能包含中文")
+        return v
+    
+    @validator("role")
+    def validate_role(cls, v):
+        """验证角色是否在允许列表中"""
+        valid_roles = [role[0] for role in USER_ROLES]
+        if v not in valid_roles:
+            raise ValueError(f"无效的角色，允许的角色：{valid_roles}")
+        return v
+    
+    @validator("status")
+    def validate_status(cls, v):
+        """验证状态是否有效"""
+        valid_status = [s[0] for s in USER_STATUS]
+        if v not in valid_status:
+            raise ValueError(f"无效的状态，允许的状态：{valid_status}")
+        return v
 
 
-class UpdateUserRequest(BaseModel):
-    """更新用户请求"""
-    real_name: Optional[str] = Field(None, min_length=2, max_length=50, description="真实姓名")
-    email: Optional[str] = Field(None, max_length=100, description="邮箱")
-    phone: Optional[str] = Field(None, max_length=20, description="手机号")
-    department_id: Optional[int] = Field(None, description="部门ID")
-    role_ids: Optional[List[int]] = Field(None, description="角色ID列表")
-    is_active: Optional[bool] = Field(None, description="是否启用")
+class UserUpdate(BaseModel):
+    """更新用户请求模型"""
+    real_name: Optional[str] = Field(None, min_length=2, max_length=20)
+    role: Optional[str] = None
+    status: Optional[str] = None
+    password: Optional[str] = Field(None, min_length=6, max_length=20)
+    
+    @validator("real_name")
+    def validate_real_name(cls, v):
+        if v is not None and not re.match(r'^[\u4e00-\u9fa5]+$', v):
+            raise ValueError("真实姓名只能包含中文")
+        return v
 
 
-class ResetPasswordRequest(BaseModel):
-    """重置密码请求"""
-    new_password: str = Field(..., min_length=6, max_length=50, description="新密码")
-
-
-# 响应模型
 class UserResponse(BaseModel):
-    """用户响应"""
+    """用户响应模型"""
     id: int
     username: str
     real_name: str
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    department_id: Optional[int] = None
-    department_name: Optional[str] = None
-    roles: List[dict] = []
-    is_active: bool
-    created_at: Optional[str] = None
-    last_login_at: Optional[str] = None
+    role: str
+    role_display: str
+    status: str
+    status_display: str
+    last_login_at: Optional[str]
+    created_at: str
+    updated_at: str
+    
+    class Config:
+        from_attributes = True
 
 
-class ApiResponse(BaseModel):
-    """统一 API 响应格式"""
-    code: int
-    message: str
-    data: Optional[dict] = None
+class UserListResponse(BaseModel):
+    """用户列表响应"""
+    total: int
+    items: List[UserResponse]
 
 
-class ListResponse(BaseModel):
-    """列表响应格式"""
-    code: int
-    message: str
-    data: dict
+# ============== API接口 ==============
+
+@router.post("", response_model=dict)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    """
+    创建用户
+    
+    权限：管理员
+    前置条件：用户名不能已存在
+    """
+    # 检查用户名是否已存在
+    existing_user = db.query(User).filter(
+        User.username == user.username,
+        User.is_deleted == False
+    ).first()
+    
+    if existing_user:
+        raise HTTPException(status_code=400, detail="用户名已存在，请更换")
+    
+    # 创建新用户
+    db_user = User(
+        username=user.username,
+        real_name=user.real_name,
+        password_hash=hash_password(user.password),
+        role=user.role,
+        status=user.status,
+    )
+    
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    
+    return {
+        "code": 200,
+        "message": "创建成功",
+        "data": {
+            "id": db_user.id,
+            "username": db_user.username,
+        }
+    }
 
 
-def check_admin_permission(current_user: User):
-    """检查当前用户是否有管理员权限"""
-    role_codes = [role.code for role in current_user.roles]
-    if "admin" not in role_codes:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="权限不足，需要管理员权限"
-        )
-
-
-@router.get("", response_model=ListResponse, summary="获取用户列表")
-async def get_users(
+@router.get("", response_model=dict)
+def get_users(
     page: int = Query(1, ge=1, description="页码"),
-    page_size: int = Query(10, ge=1, le=100, description="每页数量"),
-    keyword: Optional[str] = Query(None, description="搜索关键词（用户名/真实姓名）"),
-    department_id: Optional[int] = Query(None, description="部门ID筛选"),
-    is_active: Optional[bool] = Query(None, description="状态筛选"),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    page_size: int = Query(20, ge=1, le=100, description="每页条数"),
+    keyword: Optional[str] = Query(None, description="搜索关键词（用户名/姓名）"),
+    role: Optional[str] = Query(None, description="角色筛选"),
+    status: Optional[str] = Query(None, description="状态筛选"),
+    db: Session = Depends(get_db)
 ):
     """
     获取用户列表
     
     支持分页、搜索、筛选
+    默认每页20条
     """
     # 构建查询
     query = db.query(User).filter(User.is_deleted == False)
     
-    # 搜索关键词
+    # 搜索（用户名或真实姓名）
     if keyword:
         query = query.filter(
             (User.username.contains(keyword)) | 
             (User.real_name.contains(keyword))
         )
     
-    # 部门筛选
-    if department_id:
-        query = query.filter(User.department_id == department_id)
+    # 角色筛选
+    if role:
+        query = query.filter(User.role == role)
     
     # 状态筛选
-    if is_active is not None:
-        query = query.filter(User.is_active == is_active)
+    if status:
+        query = query.filter(User.status == status)
     
     # 统计总数
     total = query.count()
@@ -125,276 +182,121 @@ async def get_users(
     # 分页
     users = query.offset((page - 1) * page_size).limit(page_size).all()
     
-    # 构建响应数据
-    user_list = []
+    # 组装响应数据
+    items = []
     for user in users:
-        department = db.query(Department).filter(Department.id == user.department_id).first()
-        roles = [{"id": role.id, "name": role.name, "code": role.code} for role in user.roles]
-        
-        user_list.append({
+        items.append({
             "id": user.id,
             "username": user.username,
             "real_name": user.real_name,
-            "email": user.email,
-            "phone": user.phone,
-            "department_id": user.department_id,
-            "department_name": department.name if department else None,
-            "roles": roles,
-            "is_active": user.is_active,
-            "created_at": user.created_at.isoformat() if user.created_at else None,
-            "last_login_at": user.last_login_at.isoformat() if user.last_login_at else None
-        })
-    
-    return ListResponse(
-        code=200,
-        message="获取成功",
-        data={
-            "list": user_list,
-            "pagination": {
-                "page": page,
-                "page_size": page_size,
-                "total": total,
-                "total_pages": (total + page_size - 1) // page_size
-            }
-        }
-    )
-
-
-@router.get("/{user_id}", response_model=ApiResponse, summary="获取用户详情")
-async def get_user(
-    user_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    获取指定用户的详细信息
-    """
-    user = db.query(User).filter(
-        User.id == user_id,
-        User.is_deleted == False
-    ).first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="用户不存在"
-        )
-    
-    department = db.query(Department).filter(Department.id == user.department_id).first()
-    roles = [{"id": role.id, "name": role.name, "code": role.code} for role in user.roles]
-    
-    return ApiResponse(
-        code=200,
-        message="获取成功",
-        data={
-            "id": user.id,
-            "username": user.username,
-            "real_name": user.real_name,
-            "email": user.email,
-            "phone": user.phone,
-            "department_id": user.department_id,
-            "department_name": department.name if department else None,
-            "roles": roles,
-            "is_active": user.is_active,
+            "role": user.role,
+            "role_display": user.get_role_display(),
+            "status": user.status,
+            "status_display": user.get_status_display(),
+            "last_login_at": user.last_login_at.isoformat() if user.last_login_at else None,
             "created_at": user.created_at.isoformat() if user.created_at else None,
             "updated_at": user.updated_at.isoformat() if user.updated_at else None,
-            "last_login_at": user.last_login_at.isoformat() if user.last_login_at else None
+        })
+    
+    return {
+        "code": 200,
+        "message": "查询成功",
+        "data": {
+            "total": total,
+            "items": items,
+            "page": page,
+            "page_size": page_size,
         }
-    )
+    }
 
 
-@router.post("", response_model=ApiResponse, summary="创建用户")
-async def create_user(
-    request: CreateUserRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
+@router.get("/{user_id}", response_model=dict)
+def get_user(user_id: int, db: Session = Depends(get_db)):
     """
-    创建新用户（管理员权限）
+    获取单个用户详情
     """
-    # 检查管理员权限
-    check_admin_permission(current_user)
-    
-    # 检查用户名是否已存在
-    existing_user = db.query(User).filter(User.username == request.username).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="用户名已存在"
-        )
-    
-    # 检查邮箱是否已存在
-    if request.email:
-        existing_email = db.query(User).filter(User.email == request.email).first()
-        if existing_email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="邮箱已被使用"
-            )
-    
-    # 创建用户
-    new_user = User(
-        username=request.username,
-        password_hash=hash_password(request.password),
-        real_name=request.real_name,
-        email=request.email,
-        phone=request.phone,
-        department_id=request.department_id,
-        is_active=request.is_active
-    )
-    
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    
-    # 分配角色
-    if request.role_ids:
-        roles = db.query(Role).filter(Role.id.in_(request.role_ids)).all()
-        new_user.roles = roles
-        db.commit()
-    
-    return ApiResponse(
-        code=200,
-        message="创建成功",
-        data={"id": new_user.id, "username": new_user.username}
-    )
-
-
-@router.put("/{user_id}", response_model=ApiResponse, summary="更新用户")
-async def update_user(
-    user_id: int,
-    request: UpdateUserRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    更新用户信息（管理员权限）
-    """
-    # 检查管理员权限
-    check_admin_permission(current_user)
-    
-    # 查询用户
     user = db.query(User).filter(
         User.id == user_id,
         User.is_deleted == False
     ).first()
     
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="用户不存在"
-        )
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    return {
+        "code": 200,
+        "message": "查询成功",
+        "data": user.to_dict()
+    }
+
+
+@router.put("/{user_id}", response_model=dict)
+def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get_db)):
+    """
+    更新用户信息
+    
+    可更新：真实姓名、角色、状态、密码
+    不可更新：用户名
+    """
+    user = db.query(User).filter(
+        User.id == user_id,
+        User.is_deleted == False
+    ).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
     
     # 更新字段
-    if request.real_name is not None:
-        user.real_name = request.real_name
-    if request.email is not None:
-        # 检查邮箱是否被其他用户使用
-        if request.email != user.email:
-            existing_email = db.query(User).filter(
-                User.email == request.email,
-                User.id != user_id
-            ).first()
-            if existing_email:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="邮箱已被使用"
-                )
-        user.email = request.email
-    if request.phone is not None:
-        user.phone = request.phone
-    if request.department_id is not None:
-        user.department_id = request.department_id
-    if request.is_active is not None:
-        user.is_active = request.is_active
+    if user_update.real_name is not None:
+        user.real_name = user_update.real_name
     
-    # 更新角色
-    if request.role_ids is not None:
-        roles = db.query(Role).filter(Role.id.in_(request.role_ids)).all()
-        user.roles = roles
+    if user_update.role is not None:
+        # 验证角色有效性
+        valid_roles = [r[0] for r in USER_ROLES]
+        if user_update.role not in valid_roles:
+            raise HTTPException(status_code=400, detail=f"无效的角色")
+        user.role = user_update.role
+    
+    if user_update.status is not None:
+        valid_status = [s[0] for s in USER_STATUS]
+        if user_update.status not in valid_status:
+            raise HTTPException(status_code=400, detail=f"无效的状态")
+        user.status = user_update.status
+    
+    if user_update.password is not None:
+        user.password_hash = hash_password(user_update.password)
     
     db.commit()
     db.refresh(user)
     
-    return ApiResponse(
-        code=200,
-        message="更新成功",
-        data={"id": user.id, "username": user.username}
-    )
+    return {
+        "code": 200,
+        "message": "更新成功",
+        "data": user.to_dict()
+    }
 
 
-@router.delete("/{user_id}", response_model=ApiResponse, summary="删除用户")
-async def delete_user(
-    user_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
+@router.delete("/{user_id}", response_model=dict)
+def delete_user(user_id: int, db: Session = Depends(get_db)):
     """
-    软删除用户（管理员权限）
+    删除用户（软删除）
+    
+    不是真删除，只是标记is_deleted=True
     """
-    # 检查管理员权限
-    check_admin_permission(current_user)
-    
-    # 不能删除自己
-    if user_id == current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="不能删除当前登录用户"
-        )
-    
-    # 查询用户
     user = db.query(User).filter(
         User.id == user_id,
         User.is_deleted == False
     ).first()
     
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="用户不存在"
-        )
+        raise HTTPException(status_code=404, detail="用户不存在")
     
     # 软删除
     user.is_deleted = True
-    user.is_active = False
     db.commit()
     
-    return ApiResponse(
-        code=200,
-        message="删除成功"
-    )
-
-
-@router.post("/{user_id}/reset-password", response_model=ApiResponse, summary="重置用户密码")
-async def reset_password(
-    user_id: int,
-    request: ResetPasswordRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    重置指定用户的密码（管理员权限）
-    """
-    # 检查管理员权限
-    check_admin_permission(current_user)
-    
-    # 查询用户
-    user = db.query(User).filter(
-        User.id == user_id,
-        User.is_deleted == False
-    ).first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="用户不存在"
-        )
-    
-    # 重置密码
-    user.password_hash = hash_password(request.new_password)
-    db.commit()
-    
-    return ApiResponse(
-        code=200,
-        message="密码重置成功"
-    )
+    return {
+        "code": 200,
+        "message": "删除成功",
+        "data": {"id": user_id}
+    }

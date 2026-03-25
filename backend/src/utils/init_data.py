@@ -20,13 +20,13 @@ def init_permissions(db: Session):
         {"name": "用户编辑", "code": "user:edit", "permission_type": "api", "resource": "users", "action": "edit"},
         {"name": "用户删除", "code": "user:delete", "permission_type": "api", "resource": "users", "action": "delete"},
         
-        # 工单管理权限
-        {"name": "工单查看", "code": "work_order:view", "permission_type": "api", "resource": "work_orders", "action": "view"},
-        {"name": "工单创建", "code": "work_order:create", "permission_type": "api", "resource": "work_orders", "action": "create"},
-        {"name": "工单编辑", "code": "work_order:edit", "permission_type": "api", "resource": "work_orders", "action": "edit"},
-        {"name": "工单删除", "code": "work_order:delete", "permission_type": "api", "resource": "work_orders", "action": "delete"},
-        {"name": "工单审批", "code": "work_order:approve", "permission_type": "api", "resource": "work_orders", "action": "approve"},
-        {"name": "工单分配", "code": "work_order:assign", "permission_type": "api", "resource": "work_orders", "action": "assign"},
+        # 需求单管理权限
+        {"name": "需求单查看", "code": "work_order:view", "permission_type": "api", "resource": "work_orders", "action": "view"},
+        {"name": "需求单创建", "code": "work_order:create", "permission_type": "api", "resource": "work_orders", "action": "create"},
+        {"name": "需求单编辑", "code": "work_order:edit", "permission_type": "api", "resource": "work_orders", "action": "edit"},
+        {"name": "需求单删除", "code": "work_order:delete", "permission_type": "api", "resource": "work_orders", "action": "delete"},
+        {"name": "需求单审批", "code": "work_order:approve", "permission_type": "api", "resource": "work_orders", "action": "approve"},
+        {"name": "需求单分配", "code": "work_order:assign", "permission_type": "api", "resource": "work_orders", "action": "assign"},
         
         # 资产管理权限
         {"name": "资产查看", "code": "asset:view", "permission_type": "api", "resource": "assets", "action": "view"},
@@ -71,7 +71,7 @@ def init_roles(db: Session):
         {
             "name": "SRE运维工程师",
             "code": "sre",
-            "description": "负责工单处理和系统维护",
+            "description": "负责需求单处理和系统维护",
             "role_type": "sre",
             "is_system": True
         },
@@ -112,7 +112,7 @@ def init_role_permissions(db: Session):
         admin_role.permissions = all_permissions
         print(f"✅ 管理员角色已分配 {len(all_permissions)} 个权限")
     
-    # SRE权限：工单查看、处理、资产查看、服务查看、统计查看
+    # SRE权限：需求单查看、处理、资产查看、服务查看、统计查看
     if sre_role and not sre_role.permissions:
         sre_permissions = db.query(Permission).filter(
             Permission.code.in_([
@@ -123,7 +123,7 @@ def init_role_permissions(db: Session):
         sre_role.permissions = sre_permissions
         print(f"✅ SRE角色已分配 {len(sre_permissions)} 个权限")
     
-    # 需求方权限：工单查看、创建、编辑自己的工单
+    # 需求方权限：需求单查看、创建、编辑自己的需求单
     if requester_role and not requester_role.permissions:
         requester_permissions = db.query(Permission).filter(
             Permission.code.in_([

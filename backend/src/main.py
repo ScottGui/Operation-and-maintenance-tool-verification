@@ -8,8 +8,8 @@ import uvicorn
 # 导入模型并创建数据库表
 from backend.src.models import create_tables
 
-# 导入路由
-from backend.src.routes import auth, users, work_orders, assets, services, statistics
+# 导入路由（MVP阶段：只导入用户和认证相关）
+from backend.src.routes import auth, users, dashboard, files, work_orders
 
 
 # 自定义 JSONResponse 类，确保中文正常显示
@@ -25,8 +25,8 @@ class CustomJSONResponse(JSONResponse):
 
 
 app = FastAPI(
-    title="公共数据运营授权运维平台 API",
-    description="面向政务数据授权运营场景的智能运维管理系统",
+    title="公共数据服务全生命周期管理平台 API",
+    description="面向政务数据服务全生命周期管理的智能平台",
     version="1.0.0",
     default_response_class=CustomJSONResponse
 )
@@ -45,13 +45,12 @@ app.add_middleware(
 async def startup_event():
     create_tables()
 
-# 注册路由
+# 注册路由（MVP阶段：只注册用户相关）
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(dashboard.router)
+app.include_router(files.router)
 app.include_router(work_orders.router)
-app.include_router(assets.router)
-app.include_router(services.router)
-app.include_router(statistics.router)
 
 
 @app.get("/")

@@ -38,35 +38,38 @@ request.interceptors.response.use(
     }
     // 统一处理业务错误
     if (data.code !== 200) {
-      message.error(data.message || '请求失败');
+      // 延迟执行message，确保DOM已准备好
+      setTimeout(() => {
+        message.error(data.message || '请求失败');
+      }, 0);
       return Promise.reject(new Error(data.message));
     }
-    return data;
+    return response;
   },
   (error) => {
     const { response } = error;
     if (response) {
       switch (response.status) {
         case 401:
-          message.error('登录已过期，请重新登录');
+          setTimeout(() => message.error('登录已过期，请重新登录'), 0);
           localStorage.removeItem('token');
           localStorage.removeItem('userInfo');
           window.location.href = '/login';
           break;
         case 403:
-          message.error('没有权限访问');
+          setTimeout(() => message.error('没有权限访问'), 0);
           break;
         case 404:
-          message.error('请求的资源不存在');
+          setTimeout(() => message.error('请求的资源不存在'), 0);
           break;
         case 500:
-          message.error('服务器内部错误');
+          setTimeout(() => message.error('服务器内部错误'), 0);
           break;
         default:
-          message.error(response.data?.message || '网络错误');
+          setTimeout(() => message.error(response.data?.message || '网络错误'), 0);
       }
     } else {
-      message.error('网络连接失败');
+      setTimeout(() => message.error('网络连接失败'), 0);
     }
     return Promise.reject(error);
   }

@@ -1,51 +1,125 @@
 /**
- * 仪表盘页面样式
+ * 工作台页面样式
+ * 
+ * 作者/日期：AI / 2026-03-25
  */
-.dashboard {
-  padding-bottom: 24px;
+
+.dashboard-page {
+  padding: 24px;
 }
 
-.page-title {
-  font-size: 20px;
-  font-weight: 600;
+/* 欢迎区域 */
+.welcome-section {
   margin-bottom: 24px;
-  color: #333;
 }
 
-.stats-row {
+.welcome-section h1 {
+  font-size: 24px;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.role-tag {
+  font-size: 14px;
+  padding: 4px 12px;
+}
+
+/* 统计卡片区域 */
+.stats-section {
   margin-bottom: 24px;
 }
 
 .stat-card {
   border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s;
 }
 
-.stat-card :global(.ant-statistic-title) {
+.stat-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.stat-card .ant-statistic-title {
   font-size: 14px;
-  color: #666;
+  color: #6b7280;
+  margin-bottom: 8px;
 }
 
-.stat-card :global(.ant-statistic-content) {
+.stat-card .ant-statistic-content {
   font-size: 32px;
   font-weight: 600;
 }
 
-.stat-detail {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #f0f0f0;
-  display: flex;
-  gap: 24px;
-  font-size: 13px;
-  color: #666;
+.stat-card .ant-statistic-content-prefix {
+  margin-right: 8px;
 }
 
-.stat-detail span {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.recent-orders-card {
+/* 快捷操作区域 */
+.quick-actions-section {
+  margin-bottom: 24px;
   border-radius: 8px;
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.action-btn {
+  min-width: 140px;
+  height: 40px;
+}
+
+/* 待办事项区域 */
+.todo-section {
+  border-radius: 8px;
+}
+
+.todo-section .ant-list-item {
+  padding: 16px 0;
+}
+
+.todo-section .ant-list-item-meta-title {
+  font-size: 14px;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.todo-section .create-time {
+  margin-left: 12px;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+/* 响应式适配 */
+@media (max-width: 1200px) {
+  .stats-section .ant-col-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-page {
+    padding: 16px;
+  }
+  
+  .stats-section .ant-col-8,
+  .stats-section .ant-col-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
+    margin-bottom: 16px;
+  }
+  
+  .quick-actions {
+    flex-direction: column;
+  }
+  
+  .action-btn {
+    width: 100%;
+  }
 }

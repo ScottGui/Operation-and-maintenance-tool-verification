@@ -1,0 +1,130 @@
+/**
+ * 用数需求发起页面样式
+ * 
+ * 作者/日期：AI / 2026-03-25
+ */
+
+.work-order-create {
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* 页面标题 */
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 24px 0;
+}
+
+/* 表单卡片 */
+.form-card {
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.form-card .ant-card-body {
+  padding: 32px;
+}
+
+/* 表单样式 */
+.requirement-form .ant-form-item {
+  margin-bottom: 24px;
+}
+
+.requirement-form .ant-form-item-label {
+  font-weight: 500;
+  color: #333;
+}
+
+.requirement-form .ant-form-item-label > label::after {
+  content: ':';
+  margin-left: 2px;
+}
+
+/* 输入框样式 */
+.requirement-form .ant-input,
+.requirement-form .ant-select-selector,
+.requirement-form .ant-picker {
+  border-radius: 6px;
+}
+
+/* 文本域样式 */
+.requirement-form .ant-input-textarea {
+  border-radius: 6px;
+}
+
+.requirement-form .ant-input-textarea .ant-input {
+  border-radius: 6px;
+}
+
+/* 上传区域样式 */
+.upload-dragger {
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px dashed #d9d9d9;
+}
+
+.upload-dragger:hover {
+  border-color: #1890ff;
+}
+
+.upload-dragger .ant-upload-drag-icon {
+  margin-bottom: 16px;
+}
+
+.upload-dragger .ant-upload-drag-icon .anticon {
+  font-size: 48px;
+  color: #1890ff;
+}
+
+.upload-dragger .ant-upload-text {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.upload-dragger .ant-upload-hint {
+  font-size: 14px;
+  color: #999;
+}
+
+/* 表单操作按钮 */
+.form-actions {
+  margin-top: 32px;
+  margin-bottom: 0 !important;
+  padding-top: 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.form-actions .ant-form-item-control-input-content {
+  display: flex;
+  justify-content: center;
+}
+
+.form-actions .ant-btn {
+  min-width: 120px;
+  height: 40px;
+  border-radius: 6px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .work-order-create {
+    padding: 16px;
+  }
+  
+  .form-card .ant-card-body {
+    padding: 24px 16px;
+  }
+  
+  .form-actions .ant-space {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .form-actions .ant-btn {
+    width: 100%;
+  }
+}

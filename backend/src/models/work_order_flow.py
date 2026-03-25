@@ -1,6 +1,6 @@
 """
-工单流转记录模型
-记录工单的所有操作历史，用于审计和追溯
+需求单流转记录模型
+记录需求单的所有操作历史，用于审计和追溯
 """
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
@@ -32,16 +32,16 @@ class OperationType(str, enum.Enum):
 
 class WorkOrderFlow(Base):
     """
-    工单流转记录表
-    记录工单的每一次状态变更和操作
+    需求单流转记录表
+    记录需求单的每一次状态变更和操作
     """
     __tablename__ = "work_order_flow"
     
     # 主键
     id = Column(Integer, primary_key=True, index=True, autoincrement=True, comment="记录ID")
     
-    # 关联工单
-    work_order_id = Column(Integer, ForeignKey("work_order.id"), nullable=False, comment="工单ID")
+    # 关联需求单
+    work_order_id = Column(Integer, ForeignKey("work_order.id"), nullable=False, comment="需求单ID")
     work_order = relationship("WorkOrder", back_populates="flows")
     
     # 操作人

@@ -1,6 +1,6 @@
 """
 统计报表路由模块
-提供工单统计、个人统计等数据报表接口
+提供需求单统计、个人统计等数据报表接口
 """
 
 from typing import Optional
@@ -28,7 +28,7 @@ class ApiResponse(BaseModel):
     data: Optional[dict] = None
 
 
-@router.get("/work-orders", response_model=ApiResponse, summary="工单统计")
+@router.get("/work-orders", response_model=ApiResponse, summary="需求单统计")
 async def get_work_order_statistics(
     start_date: Optional[str] = Query(None, description="开始日期（YYYY-MM-DD）"),
     end_date: Optional[str] = Query(None, description="结束日期（YYYY-MM-DD）"),
@@ -36,13 +36,13 @@ async def get_work_order_statistics(
     current_user: User = Depends(get_current_user)
 ):
     """
-    获取工单统计数据
+    获取需求单统计数据
     
     包括：
-    - 工单总数
-    - 各状态工单数量
-    - 各类型工单数量
-    - 各优先级工单数量
+    - 需求单总数
+    - 各状态需求单数量
+    - 各类型需求单数量
+    - 各优先级需求单数量
     - 趋势数据（按天）
     """
     # 默认查询最近30天
@@ -61,10 +61,10 @@ async def get_work_order_statistics(
         WorkOrder.created_at < end_datetime
     )
     
-    # 工单总数
+    # 需求单总数
     total_count = base_query.count()
     
-    # 各状态工单数量
+    # 各状态需求单数量
     status_counts = {}
     for status in WorkOrderStatus:
         count = base_query.filter(WorkOrder.status == status.value).count()
@@ -73,7 +73,7 @@ async def get_work_order_statistics(
             "count": count
         }
     
-    # 各类型工单数量
+    # 各类型需求单数量
     type_counts = {}
     for work_type in WorkOrderType:
         count = base_query.filter(WorkOrder.work_type == work_type.value).count()
@@ -82,7 +82,7 @@ async def get_work_order_statistics(
             "count": count
         }
     
-    # 各优先级工单数量
+    # 各优先级需求单数量
     priority_counts = {}
     for priority in WorkOrderPriority:
         count = base_query.filter(WorkOrder.priority == priority.value).count()
@@ -137,11 +137,11 @@ async def get_personal_statistics(
     获取当前用户的个人统计数据
     
     包括：
-    - 我创建的工单
-    - 我处理的工单
-    - 待我处理的工单
+    - 我创建的需求单
+    - 我处理的需求单
+    - 待我处理的需求单
     """
-    # 我创建的工单
+    # 我创建的需求单
     my_created = db.query(WorkOrder).filter(
         WorkOrder.created_by == current_user.id,
         WorkOrder.is_deleted == False
@@ -152,7 +152,7 @@ async def get_personal_statistics(
     my_created_processing = my_created.filter(WorkOrder.status == WorkOrderStatus.PROCESSING.value).count()
     my_created_completed = my_created.filter(WorkOrder.status == WorkOrderStatus.CLOSED.value).count()
     
-    # 我处理的工单（作为 assignee）
+    # 我处理的需求单（作为 assignee）
     my_assigned = db.query(WorkOrder).filter(
         WorkOrder.assignee_id == current_user.id,
         WorkOrder.is_deleted == False
@@ -164,7 +164,7 @@ async def get_personal_statistics(
         WorkOrder.status.in_([WorkOrderStatus.COMPLETED.value, WorkOrderStatus.CLOSED.value])
     ).count()
     
-    # 待我处理的工单
+    # 待我处理的需求单
     pending_for_me = db.query(WorkOrder).filter(
         WorkOrder.assignee_id == current_user.id,
         WorkOrder.status == WorkOrderStatus.PROCESSING.value,
@@ -200,12 +200,12 @@ async def get_dashboard_statistics(
     获取仪表盘统计数据
     
     包括：
-    - 工单概览
+    - 需求单概览
     - 资产概览
     - 服务概览
-    - 最近工单
+    - 最近需求单
     """
-    # 工单概览
+    # 需求单概览
     work_order_total = db.query(WorkOrder).filter(WorkOrder.is_deleted == False).count()
     work_order_pending = db.query(WorkOrder).filter(
         WorkOrder.status == WorkOrderStatus.PENDING.value,
@@ -243,7 +243,7 @@ async def get_dashboard_statistics(
         Service.is_deleted == False
     ).count()
     
-    # 最近工单（最近5条）
+    # 最近需求单（最近5条）
     recent_orders = db.query(WorkOrder).filter(
         WorkOrder.is_deleted == False
     ).order_by(WorkOrder.created_at.desc()).limit(5).all()

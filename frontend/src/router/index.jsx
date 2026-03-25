@@ -6,9 +6,11 @@ import MainLayout from '../layouts/MainLayout';
 import Login from '../pages/Login';
 import Dashboard from '../pages/Dashboard';
 import WorkOrder from '../pages/WorkOrder';
+import WorkOrderCreate from '../pages/WorkOrderCreate';
 import Asset from '../pages/Asset';
 import Service from '../pages/Service';
 import User from '../pages/User';
+import FileManager from '../pages/FileManager';
 import { tokenStorage } from '../utils/storage';
 
 // 路由守卫组件
@@ -49,6 +51,10 @@ const router = createBrowserRouter([
         element: <WorkOrder />,
       },
       {
+        path: 'work-orders/create',
+        element: <WorkOrderCreate />,
+      },
+      {
         path: 'assets',
         element: <Asset />,
       },
@@ -59,6 +65,10 @@ const router = createBrowserRouter([
       {
         path: 'users',
         element: <User />,
+      },
+      {
+        path: 'files',
+        element: <FileManager />,
       },
     ],
   },

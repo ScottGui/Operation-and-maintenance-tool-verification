@@ -7,7 +7,7 @@ export const statisticsApi = {
   // 获取仪表盘统计数据
   getDashboard: () => request.get('/statistics/dashboard'),
   
-  // 获取工单统计
+  // 获取需求单统计
   getWorkOrderStats: (params) => request.get('/statistics/work-orders', { params }),
   
   // 获取资产统计

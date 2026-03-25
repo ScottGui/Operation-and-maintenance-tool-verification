@@ -1,0 +1,49 @@
+/**
+ * 用户管理页面样式
+ */
+.user {
+  padding-bottom: 24px;
+}
+
+.search-card {
+  margin-bottom: 16px;
+  border-radius: 8px;
+}
+
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.search-form :global(.ant-form-item) {
+  margin-bottom: 0;
+}
+
+.table-operations {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.detail-content {
+  p {
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+}
+
+.user-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.user-basic-info {
+  p {
+    margin-bottom: 4px;
+  }
+}

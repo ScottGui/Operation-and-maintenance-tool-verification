@@ -1,0 +1,113 @@
+/**
+ * 文件管理中心样式
+ * 
+ * 作者/日期：AI / 2026-03-25
+ */
+
+.file-manager-page {
+  padding: 24px;
+}
+
+/* 页面标题 */
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+/* 上传卡片 */
+.upload-card {
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.upload-card .ant-card-body {
+  padding: 24px;
+}
+
+/* 上传区域 */
+.upload-dragger {
+  margin-bottom: 32px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.upload-dragger .ant-upload-drag-icon {
+  margin-bottom: 16px;
+}
+
+.upload-dragger .ant-upload-drag-icon .anticon {
+  font-size: 48px;
+  color: #1890ff;
+}
+
+.upload-dragger .ant-upload-text {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.upload-dragger .ant-upload-hint {
+  font-size: 14px;
+  color: #999;
+}
+
+/* 文件列表区域 */
+.file-list-section {
+  margin-top: 32px;
+}
+
+.file-list-section h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  color: #333;
+  padding-left: 12px;
+}
+
+.file-list .ant-list-item {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.3s;
+}
+
+.file-list .ant-list-item:hover {
+  background: #fafafa;
+}
+
+.file-list .ant-list-item-meta-title {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.file-list .ant-list-item-meta-description {
+  font-size: 12px;
+  color: #999;
+}
+
+.file-list .upload-time {
+  margin-left: 12px;
+  color: #999;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .file-manager-page {
+    padding: 16px;
+  }
+  
+  .upload-dragger {
+    padding: 24px 16px;
+  }
+  
+  .file-list .ant-list-item-action {
+    margin-left: 0;
+    margin-top: 12px;
+  }
+}

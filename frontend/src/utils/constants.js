@@ -2,18 +2,23 @@
  * 常量定义
  */
 
-// 工单状态
+// 需求单状态（对应10个流程节点）
 export const WORK_ORDER_STATUS = {
   DRAFT: { value: 'draft', label: '草稿', color: 'default' },
-  PENDING: { value: 'pending', label: '待审批', color: 'warning' },
-  APPROVED: { value: 'approved', label: '已审批', color: 'processing' },
-  PROCESSING: { value: 'processing', label: '处理中', color: 'processing' },
-  COMPLETED: { value: 'completed', label: '已完成', color: 'success' },
-  CLOSED: { value: 'closed', label: '已关闭', color: 'default' },
+  PENDING_REVIEW: { value: 'pending_review', label: '待审批', color: 'warning' },
+  ANALYZED: { value: 'analyzed', label: '已梳理', color: 'processing' },
+  APPROVED: { value: 'approved', label: '审批通过', color: 'success' },
   REJECTED: { value: 'rejected', label: '已驳回', color: 'error' },
+  SOLUTION_SUBMITTED: { value: 'solution_submitted', label: '方案已提交', color: 'processing' },
+  IN_REVIEW: { value: 'in_review', label: '会审中', color: 'warning' },
+  IN_PROGRESS: { value: 'in_progress', label: '实施中', color: 'processing' },
+  PENDING_QA: { value: 'pending_qa', label: '待质量稽核', color: 'warning' },
+  PENDING_TRIAL: { value: 'pending_trial', label: '待试运行', color: 'warning' },
+  PENDING_MONITOR: { value: 'pending_monitor', label: '待监控配置', color: 'warning' },
+  ONLINE: { value: 'online', label: '已上线', color: 'success' },
 };
 
-// 工单优先级
+// 需求单优先级
 export const WORK_ORDER_PRIORITY = {
   URGENT: { value: 'urgent', label: '紧急', color: 'red' },
   HIGH: { value: 'high', label: '高', color: 'orange' },
@@ -21,17 +26,11 @@ export const WORK_ORDER_PRIORITY = {
   LOW: { value: 'low', label: '低', color: 'green' },
 };
 
-// 工单类型
+// 需求单类型
 export const WORK_ORDER_TYPE = {
-  PLATFORM_BUILD: { value: 'platform_build', label: '平台建设' },
-  PLATFORM_UPDATE: { value: 'platform_update', label: '平台迭代' },
-  PLATFORM_OFFLINE: { value: 'platform_offline', label: '平台下线' },
-  DATA_SERVICE_BUILD: { value: 'data_service_build', label: '数据服务建设' },
-  DATA_SERVICE_UPDATE: { value: 'data_service_update', label: '数据服务迭代' },
-  DATA_SERVICE_OFFLINE: { value: 'data_service_offline', label: '数据服务下线' },
-  SECURITY: { value: 'security', label: '安全加固' },
-  AUDIT: { value: 'audit', label: '审计管理' },
-  RESOURCE: { value: 'resource', label: '资源申请' },
+  INTERFACE_DEV: { value: 'interface_dev', label: '接口开发' },
+  DATA_EXPORT: { value: 'data_export', label: '数据导出' },
+  DATA_SYNC: { value: 'data_sync', label: '数据同步' },
   OTHER: { value: 'other', label: '其他' },
 };
 

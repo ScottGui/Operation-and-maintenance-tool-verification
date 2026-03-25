@@ -1,6 +1,6 @@
 """
-运维工单工具模块
-提供工单编号生成、状态流转等工具函数
+运维需求单工具模块
+提供需求单号生成、状态流转等工具函数
 """
 
 from datetime import datetime
@@ -11,20 +11,20 @@ from backend.src.models.work_order import WorkOrder
 
 def generate_work_order_no(db: Session) -> str:
     """
-    生成工单编号
+    生成需求单号
     格式：WO-YYYYMMDD-XXXX（如：WO-20240323-0001）
     
     Args:
         db: 数据库会话
         
     Returns:
-        工单编号字符串
+        需求单号字符串
     """
     today = datetime.now()
     date_str = today.strftime("%Y%m%d")
     prefix = f"WO-{date_str}-"
     
-    # 查询当天最后一个工单编号
+    # 查询当天最后一个需求单号
     last_order = db.query(WorkOrder).filter(
         WorkOrder.order_no.like(f"{prefix}%")
     ).order_by(WorkOrder.order_no.desc()).first()
@@ -91,7 +91,7 @@ def can_transition(from_status: str, to_status: str, user_role: str) -> bool:
 
 def get_work_order_status_display(status: str) -> str:
     """
-    获取工单状态的中文显示名称
+    获取需求单状态的中文显示名称
     
     Args:
         status: 状态代码
@@ -113,7 +113,7 @@ def get_work_order_status_display(status: str) -> str:
 
 def get_work_order_type_display(work_type: str) -> str:
     """
-    获取工单类型的中文显示名称
+    获取需求单类型的中文显示名称
     
     Args:
         work_type: 类型代码

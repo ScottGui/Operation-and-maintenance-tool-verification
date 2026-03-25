@@ -1,7 +1,8 @@
 /**
- * 工单管理页面
+ * 需求单管理页面
  */
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Table,
   Button,
@@ -24,6 +25,7 @@ import {
   EditOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { workOrderApi } from '../../api';
 import {
   WORK_ORDER_STATUS,
@@ -36,6 +38,7 @@ const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const WorkOrder = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState([]);
   const [pagination, setPagination] = useState({
@@ -46,8 +49,9 @@ const WorkOrder = () => {
   const [searchForm] = Form.useForm();
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [currentRecord, setCurrentRecord] = useState(null);
+  const [searchParams] = useSearchParams();
 
-  // 获取工单列表
+  // 获取需求单列表
   const fetchData = async (params = {}) => {
     try {
       setLoading(true);
@@ -56,21 +60,28 @@ const WorkOrder = () => {
         page_size: pagination.pageSize,
         ...params,
       });
-      setData(res.data.list);
+      setData(res.data.data?.items || res.data.items || []);
       setPagination({
         ...pagination,
-        total: res.data.pagination.total,
+        total: res.data.data?.total || res.data.total || 0,
       });
     } catch (error) {
-      console.error('获取工单列表失败:', error);
+      console.error('获取需求单列表失败:', error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    // 读取 URL 参数并设置筛选条件
+    const status = searchParams.get('status');
+    const initialParams = {};
+    if (status) {
+      initialParams.status = status;
+      searchForm.setFieldsValue({ status });
+    }
+    fetchData(initialParams);
+  }, [searchParams]);
 
   // 处理搜索
   const handleSearch = (values) => {
@@ -84,8 +95,20 @@ const WorkOrder = () => {
   };
 
   // 获取状态标签
-  const getStatusTag = (status) => {
-    const config = WORK_ORDER_STATUS[status?.toUpperCase()];
+  const getStatusTag = (status, record) => {
+    // 优先使用后端返回的 status_display
+    if (record?.status_display) {
+      // 根据状态值获取颜色
+      const statusKey = Object.keys(WORK_ORDER_STATUS).find(
+        key => WORK_ORDER_STATUS[key].value === status
+      );
+      const color = statusKey ? WORK_ORDER_STATUS[statusKey].color : 'default';
+      return <Badge status={color} text={record.status_display} />;
+    }
+    // 兜底：通过状态值查找
+    const config = Object.values(WORK_ORDER_STATUS).find(
+      (item) => item.value === status
+    );
     if (!config) return <Tag>{status}</Tag>;
     return <Badge status={config.color} text={config.label} />;
   };
@@ -111,11 +134,11 @@ const WorkOrder = () => {
     setDetailModalVisible(true);
   };
 
-  // 删除工单
+  // 删除需求单
   const handleDelete = async (id) => {
     Modal.confirm({
       title: '确认删除',
-      content: '确定要删除这个工单吗？此操作不可恢复。',
+      content: '确定要删除这个需求单吗？此操作不可恢复。',
       onOk: async () => {
         try {
           await workOrderApi.delete(id);
@@ -131,7 +154,7 @@ const WorkOrder = () => {
   // 表格列定义
   const columns = [
     {
-      title: '工单编号',
+      title: '需求单号',
       dataIndex: 'order_no',
       key: 'order_no',
       width: 160,
@@ -144,10 +167,10 @@ const WorkOrder = () => {
     },
     {
       title: '类型',
-      dataIndex: 'work_type',
-      key: 'work_type',
+      dataIndex: 'type',
+      key: 'type',
       width: 120,
-      render: getTypeTag,
+      render: (type, record) => record?.type_display || getTypeTag(type),
     },
     {
       title: '优先级',
@@ -161,20 +184,26 @@ const WorkOrder = () => {
       dataIndex: 'status',
       key: 'status',
       width: 120,
-      render: getStatusTag,
+      render: (status, record) => getStatusTag(status, record),
     },
     {
       title: '创建人',
-      dataIndex: 'creator_name',
-      key: 'creator_name',
+      dataIndex: 'creator_role',
+      key: 'creator_role',
       width: 120,
-    },
-    {
-      title: '处理人',
-      dataIndex: 'assignee_name',
-      key: 'assignee_name',
-      width: 120,
-      render: (text) => text || '-',
+      render: (role) => {
+        const roleMap = {
+          'data_consumer': '用数方',
+          'requirement_manager': '需求经理',
+          'operator': '运营方',
+          'project_manager': '项目经理',
+          'qa_manager': '质量稽核经理',
+          'ops_manager': '数据运维经理',
+          'team_lead': '四方组长',
+          'admin': '管理员',
+        };
+        return roleMap[role] || role;
+      },
     },
     {
       title: '创建时间',
@@ -221,7 +250,7 @@ const WorkOrder = () => {
 
   return (
     <div className="work-order">
-      <h2 className="page-title">工单管理</h2>
+      <h2 className="page-title">需求单管理</h2>
       
       {/* 搜索表单 */}
       <Card className="search-card">
@@ -233,7 +262,7 @@ const WorkOrder = () => {
         >
           <Form.Item name="keyword">
             <Input
-              placeholder="搜索工单编号/标题"
+              placeholder="搜索需求单号/标题"
               prefix={<SearchOutlined />}
               allowClear
             />
@@ -253,13 +282,13 @@ const WorkOrder = () => {
             </Select>
           </Form.Item>
           
-          <Form.Item name="priority">
+          <Form.Item name="type">
             <Select
-              placeholder="选择优先级"
+              placeholder="选择类型"
               allowClear
               style={{ width: 120 }}
             >
-              {Object.values(WORK_ORDER_PRIORITY).map((item) => (
+              {Object.values(WORK_ORDER_TYPE).map((item) => (
                 <Option key={item.value} value={item.value}>
                   {item.label}
                 </Option>
@@ -282,8 +311,8 @@ const WorkOrder = () => {
 
       {/* 操作栏 */}
       <div className="table-operations">
-        <Button type="primary" icon={<PlusOutlined />}>
-          新建工单
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/work-orders/create')}>
+          新建需求单
         </Button>
       </div>
 
@@ -313,7 +342,7 @@ const WorkOrder = () => {
 
       {/* 详情弹窗 */}
       <Modal
-        title="工单详情"
+        title="需求单详情"
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={null}
@@ -321,14 +350,15 @@ const WorkOrder = () => {
       >
         {currentRecord && (
           <div className="detail-content">
-            <p><strong>工单编号：</strong>{currentRecord.order_no}</p>
+            <p><strong>需求单号：</strong>{currentRecord.order_no}</p>
             <p><strong>标题：</strong>{currentRecord.title}</p>
-            <p><strong>描述：</strong>{currentRecord.description || '-'}</p>
-            <p><strong>类型：</strong>{getTypeTag(currentRecord.work_type)}</p>
-            <p><strong>优先级：</strong>{getPriorityTag(currentRecord.priority)}</p>
-            <p><strong>状态：</strong>{getStatusTag(currentRecord.status)}</p>
-            <p><strong>创建人：</strong>{currentRecord.creator_name}</p>
+            <p><strong>类型：</strong>{currentRecord.type_display || getTypeTag(currentRecord.type)}</p>
+            <p><strong>使用频率：</strong>{currentRecord.frequency_display || '-'}</p>
+            <p><strong>状态：</strong>{getStatusTag(currentRecord.status, currentRecord)}</p>
+            <p><strong>期望完成时间：</strong>{currentRecord.expected_date || '-'}</p>
             <p><strong>创建时间：</strong>{currentRecord.created_at ? new Date(currentRecord.created_at).toLocaleString() : '-'}</p>
+            <p><strong>业务背景：</strong>{currentRecord.business_background || '-'}</p>
+            <p><strong>数据范围：</strong>{currentRecord.data_scope || '-'}</p>
           </div>
         )}
       </Modal>
